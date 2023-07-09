@@ -1,20 +1,18 @@
 class ArticlesController < ApplicationController
-  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
-
-  def index
-    articles = Article.all.includes(:user).order(created_at: :desc)
-    render json: articles, each_serializer: ArticleListSerializer
-  end
-
   def show
-    article = Article.find(params[:id])
-    render json: article
+    # Initialize session[:page_views] to 0 if it is not already set
+    session[:page_views] ||= 0
+
+    # Increment page views by 1
+    session[:page_views] += 1
+
+    # Check if the user has viewed fewer than 3 pages
+    if session[:page_views] < 3
+      # Render JSON response with the article data
+      render json: { article: Article.find(params[:id]) }
+    else
+      # Render JSON response with an error message and status code 401 unauthorized
+      render json: { error: 'You have reached the maximum page views.' }, status: :unauthorized
+    end
   end
-
-  private
-
-  def record_not_found
-    render json: { error: "Article not found" }, status: :not_found
-  end
-
 end
